@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+
+   <extension
+         point="org.eclipse.ui.views">
+      <category
+            name="%category.name"
+            id="org.eclipse.contrib.debug.ui">
+      </category>
+      <view
+            name="%view.name"
+            icon="icons/sample.gif"
+            category="org.eclipse.contrib.debug.ui"
+            class="org.eclipse.contrib.debug.ui.view.ObjectGraphViewPart"
+            id="org.eclipse.contrib.debug.ui.view.ObjectGraph">
+      </view>
+   </extension>
+   <extension
+         point="org.eclipse.ui.perspectiveExtensions">
+      <perspectiveExtension
+            targetID="org.eclipse.jdt.ui.JavaPerspective">
+         <view
+               ratio="0.5"
+               relative="org.eclipse.ui.views.ProblemView"
+               relationship="right"
+               id="org.eclipse.contrib.debug.ui.view.ObjectGraph">
+         </view>
+      </perspectiveExtension>
+   </extension>
+   <extension
+         point="org.eclipse.help.contexts">
+      <contexts
+            file="contexts.xml">
+      </contexts>
+   </extension>
+   <extension
+         point="org.eclipse.ui.commands">
+      <command
+            id="org.eclipse.contrib.debug.ui.VariableView.ObjectGraphViewer.Watch"
+            name="WatchInObjectGraph">
+      </command>
+   </extension>
+   <extension
+         point="org.eclipse.ui.menus">
+      <menuContribution
+            allPopups="false"
+            locationURI="popup:org.eclipse.debug.ui.VariableView">
+         <command
+               commandId="org.eclipse.contrib.debug.ui.VariableView.ObjectGraphViewer.Watch"
+               label="Watch in Object Graph"
+               style="push">
+         </command>
+      </menuContribution>
+   </extension>
+   <extension
+         point="org.eclipse.ui.handlers">
+      <handler
+            class="org.eclipse.contrib.ui.handlers.variables.view.popup.WatchInObjectGraphView"
+            commandId="org.eclipse.contrib.debug.ui.VariableView.ObjectGraphViewer.Watch">
+      </handler>
+   </extension>
+
+</plugin>
