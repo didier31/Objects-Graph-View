@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.Serializable;
 
 import org.eclipse.debug.core.DebugException;
+import org.eclipse.debug.core.model.IValue;
 import org.eclipse.debug.core.model.IVariable;
 
 /**
@@ -25,8 +26,8 @@ public class Variable implements Serializable {
 	/**
 	 * keep track of variable's name when a graph cell is dragged.
 	 */
-	protected String cachedName,
-	                 cachedReferenceTypeName;
+	protected String cachedReferenceTypeName,
+	                 cachedValue;
 
 	public Variable(IVariable var)
 	{
@@ -44,12 +45,24 @@ public class Variable implements Serializable {
 	 */
 	public String toString()
 	{
-		String string = "<NoName>";
+		String string = "<No Type>";
 		try
 		{
-			string = variable != null ? variable.getName() : cachedName;			
-		    string += " : "; 
-			string += variable != null ? variable.getReferenceTypeName() : cachedReferenceTypeName;		    
+			string = variable != null ? variable.getReferenceTypeName() : cachedReferenceTypeName;
+			
+			IValue value = variable != null ? variable.getValue() : null;
+			if (value != null)
+			{
+			if (!value.hasVariables())
+			{
+				string += " := " + value.getValueString();
+			}
+			}
+			else if (cachedValue != null)
+			{
+				string += " := " + cachedValue;
+			}
+				
 			
 			return string;
 		}
@@ -59,19 +72,26 @@ public class Variable implements Serializable {
 		}
 	}
 	
-	private void writeObject(java.io.ObjectOutputStream out)
+	protected void writeObject(java.io.ObjectOutputStream out)
 		     throws IOException
 		     {
 		     try {
-				out.writeObject(variable.getName());
 				out.writeObject(variable.getReferenceTypeName());
+				if (variable.getValue().hasVariables())
+				{
+					out.writeObject(null);
+				}
+				else
+				{
+				out.writeObject(variable.getValue().getValueString());
+				}
 			} catch (DebugException e) {}
 		    }
 	
-		 private void readObject(java.io.ObjectInputStream in)
+		 protected void readObject(java.io.ObjectInputStream in)
 		     throws IOException, ClassNotFoundException
 		     {
-			 cachedName = (String) in.readObject();
 			 cachedReferenceTypeName = (String) in.readObject();
+			 cachedValue = (String) in.readObject();
 		     }
 }

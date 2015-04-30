@@ -10,6 +10,8 @@ import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.commands.IHandler;
 import org.eclipse.core.commands.IHandlerListener;
 import org.eclipse.jface.viewers.TreeSelection;
+import org.eclipse.ui.IWorkbenchPage;
+import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.handlers.HandlerUtil;
 
@@ -45,9 +47,16 @@ public class WatchInObjectGraphView implements IHandler {
 		TreeSelection selection = (TreeSelection) HandlerUtil.getActiveWorkbenchWindow(event)
 		                                                     .getActivePage().getSelection();	
 		
-		ObjectGraphViewPart objectGraphViewPart = (ObjectGraphViewPart) PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().findView(ObjectGraphViewPart.ID);
+		ObjectGraphViewPart objectGraphViewPart = (ObjectGraphViewPart) PlatformUI
+				                                                       .getWorkbench()
+				                                                       .getActiveWorkbenchWindow()
+				                                                       .getActivePage()
+				                                                       .findView(ObjectGraphViewPart.ID);
+		if (objectGraphViewPart != null)
+		{
 		Controller.get().set(objectGraphViewPart.getGraph());
 		Controller.get().addGraphInput(selection.toList());
+		}
 		return null;
 	}
 

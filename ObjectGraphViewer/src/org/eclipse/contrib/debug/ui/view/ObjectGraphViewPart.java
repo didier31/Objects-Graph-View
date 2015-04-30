@@ -27,7 +27,7 @@ public class ObjectGraphViewPart extends ViewPart {
 		return control;
 	}
 
-	private ObjectGraphViewer graph = new ObjectGraphViewer(this);	
+	private ObjectGraphViewer graph;	
 	
     public ObjectGraphViewer getGraph()
     {
@@ -52,6 +52,8 @@ public class ObjectGraphViewPart extends ViewPart {
                 
                 graphComponent.setBorder(new EmptyBorder(0,0,0,0));  
                 graphComponent.setConnectable(false);
+                
+                getGraph().setGraphComponent(graphComponent);
                 
                 return graphComponent;
             }

@@ -41,7 +41,8 @@ Export-Package: com.mxgraph.analysis,
  org.eclipse.contrib.debug.startup,
  org.eclipse.contrib.debug.ui.view,
  org.eclipse.contrib.ui.handlers.variables.view.popup
-Import-Package: org.eclipse.debug.internal.ui.views.variables,
+Import-Package: com.sun.jdi,
+ org.eclipse.debug.internal.ui.views.variables,
  org.eclipse.debug.ui,
  org.eclipse.jdt.internal.debug.core.model
 Bundle-ClassPath: .,
