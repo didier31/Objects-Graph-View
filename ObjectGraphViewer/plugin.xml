@@ -38,7 +38,7 @@
          point="org.eclipse.ui.commands">
       <command
             id="org.eclipse.contrib.debug.ui.VariableView.ObjectGraphViewer.Watch"
-            name="WatchInObjectGraph">
+            name="%command.name">
       </command>
    </extension>
    <extension
@@ -48,7 +48,7 @@
             locationURI="popup:org.eclipse.debug.ui.VariableView">
          <command
                commandId="org.eclipse.contrib.debug.ui.VariableView.ObjectGraphViewer.Watch"
-               label="Watch in Object Graph"
+               label="%command.label"
                style="push">
          </command>
       </menuContribution>
@@ -59,6 +59,20 @@
             class="org.eclipse.contrib.ui.handlers.variables.view.popup.WatchInObjectGraphView"
             commandId="org.eclipse.contrib.debug.ui.VariableView.ObjectGraphViewer.Watch">
       </handler>
+   </extension>
+   <extension
+         point="org.eclipse.ui.preferencePages">
+      <page
+            class="org.eclipse.contrib.debug.preferences.ObjectGraphPreferences"
+            id="org.eclipse.contrib.debug.preferences.ObjectGraphPreferences"
+            name="Object Graph">
+      </page>
+   </extension>
+   <extension
+         point="org.eclipse.core.runtime.preferences">
+      <initializer
+            class="org.eclipse.contrib.debug.preferences.PreferenceInitializer">
+      </initializer>
    </extension>
 
 </plugin>

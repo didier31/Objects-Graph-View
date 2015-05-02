@@ -6,7 +6,7 @@ import java.io.Serializable;
 import org.eclipse.debug.core.DebugException;
 import org.eclipse.debug.core.model.IVariable;
 
-public class NamedVariable extends Variable implements Serializable {
+public class NamedVariable extends Variable {
 
 	/**
 	 * 
@@ -28,7 +28,7 @@ public class NamedVariable extends Variable implements Serializable {
 		String string = "<NoName>";
 		try
 		{
-			string = variable != null ? variable.getName() : cachedName;			
+			string = getVariable() != null ? getVariable().getName() : cachedName;			
 		    string += " : "; 
 			string += super.toString();
 				
@@ -41,22 +41,18 @@ public class NamedVariable extends Variable implements Serializable {
 		}
 	}
 	
-	@Override
-	protected void writeObject(java.io.ObjectOutputStream out)
+	private void writeObject(java.io.ObjectOutputStream out)
 		     throws IOException
 		     {
 		     try {
-				out.writeObject(variable.getName());
-				super.writeObject(out);
+				out.writeObject(getVariable().getName());
 			} catch (DebugException e) {}
 		    }
-	
-   @Override	
+		
    protected void readObject(java.io.ObjectInputStream in)
 		     throws IOException, ClassNotFoundException
 		     {
 			 cachedName = (String) in.readObject();
-			 readObject(in);
 		     }
 
 }

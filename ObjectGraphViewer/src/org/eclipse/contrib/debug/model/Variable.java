@@ -5,6 +5,7 @@ package org.eclipse.contrib.debug.model;
 import java.io.IOException;
 import java.io.Serializable;
 
+import org.eclipse.contrib.debug.control.TypenameModifier;
 import org.eclipse.debug.core.DebugException;
 import org.eclipse.debug.core.model.IValue;
 import org.eclipse.debug.core.model.IVariable;
@@ -21,7 +22,7 @@ public class Variable implements Serializable {
 
 	private static final long serialVersionUID = -7665943218834959525L;
 	
-	protected IVariable variable;
+	private IVariable variable;
 	
 	/**
 	 * keep track of variable's name when a graph cell is dragged.
@@ -50,6 +51,8 @@ public class Variable implements Serializable {
 		{
 			string = variable != null ? variable.getReferenceTypeName() : cachedReferenceTypeName;
 			
+			string = TypenameModifier.modify(string);
+			
 			IValue value = variable != null ? variable.getValue() : null;
 			if (value != null)
 			{
@@ -72,7 +75,7 @@ public class Variable implements Serializable {
 		}
 	}
 	
-	protected void writeObject(java.io.ObjectOutputStream out)
+	protected void writeObjectHelper(java.io.ObjectOutputStream out)
 		     throws IOException
 		     {
 		     try {
@@ -88,10 +91,22 @@ public class Variable implements Serializable {
 			} catch (DebugException e) {}
 		    }
 	
-		 protected void readObject(java.io.ObjectInputStream in)
+	private void writeObject(java.io.ObjectOutputStream out)
+		     throws IOException
+		     {
+		     writeObjectHelper(out);
+		     }
+	
+	protected void readObjectHelper(java.io.ObjectInputStream in)
 		     throws IOException, ClassNotFoundException
 		     {
 			 cachedReferenceTypeName = (String) in.readObject();
 			 cachedValue = (String) in.readObject();
+		     }
+	
+	private void readObject(java.io.ObjectInputStream in)
+		     throws IOException, ClassNotFoundException
+		     {
+		     readObjectHelper(in);
 		     }
 }

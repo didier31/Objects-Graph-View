@@ -2,26 +2,29 @@ package org.eclipse.contrib.debug.model;
 
 import java.util.List;
 
+import org.eclipse.contrib.debug.control.TypenameModifier;
 import org.eclipse.contrib.debug.ui.view.ObjectGraphViewPart;
 import org.eclipse.debug.core.DebugException;
 import org.eclipse.debug.core.model.IValue;
 import org.eclipse.debug.core.model.IVariable;
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.widgets.Display;
 
+import java.awt.Color;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+
 import com.mxgraph.layout.mxStackLayout;
 import com.mxgraph.model.mxCell;
-import com.mxgraph.model.mxGeometry;
 import com.mxgraph.model.mxICell;
 import com.mxgraph.swing.mxGraphComponent;
 import com.mxgraph.util.mxConstants;
 import com.mxgraph.util.mxRectangle;
 import com.mxgraph.view.mxGraph;
 
-public class ObjectGraphViewer extends mxGraph implements MouseListener {
+public class ObjectGraphViewer extends mxGraph implements MouseListener, ChangeListener {
 	
 	private ObjectGraphViewPart viewPart;
 	private mxGraphComponent graphComponent;
@@ -40,7 +43,8 @@ public class ObjectGraphViewer extends mxGraph implements MouseListener {
 		setCellsCloneable(false);
 		setCellsDisconnectable(false);
 		setCellsResizable(false);	
-		
+		setDropEnabled(false);
+		TypenameModifier.addChangeListener(this);
 	}
 	
 	protected boolean notIn(IVariable argVar)
@@ -66,65 +70,7 @@ public class ObjectGraphViewer extends mxGraph implements MouseListener {
 			e.printStackTrace();
 		}
 		return notFound;
-	}
-	
-	
-	protected void addInput(IVariable argVar, Object parent, boolean isNamed)
-	{
-		if (notIn(argVar))
-		{
-		Variable variable = (isNamed) ? new NamedVariable(argVar) : new Variable(argVar);
-		String style = mxConstants.STYLE_AUTOSIZE + ";" 
-		             + mxConstants.STYLE_MOVABLE + ";" 
-				     + mxConstants.STYLE_SPACING_LEFT + "=10.0";
-		mxCell cell = (mxCell) createVertex(parent, String.valueOf(variable.hashCode()), variable,
-				                   -1, -1, 0, 0, style, false);
-		
-		IValue varValue = null;;
-		IVariable fields[] = null;
-		try {
-			varValue = argVar.getValue();
-			fields = varValue.getVariables();
-		} catch (DebugException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}		
-				
-	   addCell(cell, parent);	 
-	   
-	   mxCell cellChild[] = new mxCell[fields.length];
-	   int i = 0;
-	   double width = 0;
-	   
-	   for (IVariable field : fields)
-	   {
-			cellChild[i] = (mxCell) createVertex(cell, String.valueOf(field.hashCode()), new NamedVariable(field),
-	                                                 -1, -1, 0, 0, mxConstants.STYLE_AUTOSIZE, false);
-			cell.insert(cellChild[i]);
-			cellSizeUpdated(cellChild[i], false);
-			width = Math.max(width, cellChild[i].getGeometry().getWidth());			
-			i++;
-	   }	   
-	   
-	   connectToExisting(cell);
-	   
-	   cellSizeUpdated(cell, false);
-	   
-	   width = Math.max(width, cell.getGeometry().getWidth());
-	   
-	   for (mxCell childCell : cellChild)
-	   {
-		   childCell.getGeometry().setWidth(width);
-	   }
-	   
-	   cell.getGeometry().setWidth(width);	   	   
-		
-	   mxStackLayout layout = new mxStackLayout(this, false);
-	   layout.execute(cell);
-	   
-	   setCellStyles(mxConstants.STYLE_MOVABLE,"0",cellChild);		
-		}
-	}
+	}	
 	
 	protected void connectToExisting(mxCell newcell) 
 	{	
@@ -244,6 +190,64 @@ public class ObjectGraphViewer extends mxGraph implements MouseListener {
 		}				
 	}
 	
+	protected void addInput(IVariable argVar, Object parent, boolean isNamed)
+	{
+		if (notIn(argVar))
+		{
+		Variable variable = (isNamed) ? new NamedVariable(argVar) : new Variable(argVar);
+		String style = mxConstants.STYLE_AUTOSIZE + ";" 
+		             + mxConstants.STYLE_MOVABLE + ";" 
+				     + mxConstants.STYLE_SPACING_LEFT + "=10.0";
+		mxCell cell = (mxCell) createVertex(parent, String.valueOf(variable.hashCode()), variable,
+				                   -1, -1, 0, 0, style, false);
+		
+		IValue varValue = null;;
+		IVariable fields[] = null;
+		try {
+			varValue = argVar.getValue();
+			fields = varValue.getVariables();
+		} catch (DebugException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}		
+				
+	   addCell(cell, parent);	 
+	   
+	   mxCell cellChild[] = new mxCell[fields.length];
+	   int i = 0;
+	   double width = 0;
+	   
+	   for (IVariable field : fields)
+	   {
+			cellChild[i] = (mxCell) createVertex(cell, String.valueOf(field.hashCode()), new NamedVariable(field),
+	                                                 -1, -1, 0, 0, mxConstants.STYLE_AUTOSIZE, false);
+			cell.insert(cellChild[i]);
+			cellSizeUpdated(cellChild[i], false);
+			width = Math.max(width, cellChild[i].getGeometry().getWidth());			
+			i++;
+	   }	   
+	   
+	   connectToExisting(cell);
+	   
+	   cellSizeUpdated(cell, false);
+	   
+	   width = Math.max(width, cell.getGeometry().getWidth());
+	   
+	   for (mxCell childCell : cellChild)
+	   {
+		   childCell.getGeometry().setWidth(width);
+	   }
+	   
+	   cell.getGeometry().setWidth(width);	   	   
+		
+	   mxStackLayout layout = new mxStackLayout(this, false);
+	  
+	   layout.execute(cell);
+	   
+	   setCellStyles(mxConstants.STYLE_MOVABLE,"0",cellChild);		
+		}
+	}
+	
 	public void addInput(List<IVariable> list)
     {
 		Object parent = getDefaultParent();
@@ -262,7 +266,7 @@ public class ObjectGraphViewer extends mxGraph implements MouseListener {
 		}
 			
 			
-		     mxStackLayout layout = new mxStackLayout(this, false) {
+/*		mxStackLayout layout = new mxStackLayout(this, false) {
 		    	 @Override
 		    	 public mxRectangle getContainerSize()
 		    	 {
@@ -270,9 +274,7 @@ public class ObjectGraphViewer extends mxGraph implements MouseListener {
 		    		 return new mxRectangle(0.0, 0.0, size.x, size.y);
 		    	 }
 		     };
-			layout.execute(parent);
-			repaint();
-			
+			layout.execute(parent); */			
     }
 
 	public ObjectGraphViewPart getMyViewPart() {
@@ -285,7 +287,7 @@ public class ObjectGraphViewer extends mxGraph implements MouseListener {
 
 	public void setGraphComponent(mxGraphComponent graphComponent) {
 		// TODO Auto-generated method stub
-		this.graphComponent = graphComponent;
+		this.graphComponent = graphComponent;	
 		
 		getGraphComponent().getGraphControl().addMouseListener(ObjectGraphViewer.this);
 	}
@@ -333,6 +335,14 @@ public class ObjectGraphViewer extends mxGraph implements MouseListener {
 	public void mouseExited(MouseEvent e) {
 		// TODO Auto-generated method stub
 		
+	}
+
+	@Override
+	public void stateChanged(ChangeEvent e) {
+		if (e.getSource() instanceof TypenameModifier)
+		{
+			refresh();
+		}		
 	}
 }
 

@@ -2,7 +2,6 @@ package org.eclipse.contrib.debug.ui.view;
 
 
 import javax.swing.JComponent;
-import javax.swing.JScrollPane;
 import javax.swing.border.EmptyBorder;
 
 import org.eclipse.albireo.core.SwingControl;
