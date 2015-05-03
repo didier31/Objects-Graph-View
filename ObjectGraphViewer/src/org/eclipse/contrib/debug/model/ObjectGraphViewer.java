@@ -1,5 +1,6 @@
 package org.eclipse.contrib.debug.model;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.contrib.debug.control.TypenameModifier;
@@ -16,6 +17,7 @@ import java.awt.event.MouseListener;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import com.mxgraph.layout.mxFastOrganicLayout;
 import com.mxgraph.layout.mxStackLayout;
 import com.mxgraph.model.mxCell;
 import com.mxgraph.model.mxICell;
@@ -190,7 +192,7 @@ public class ObjectGraphViewer extends mxGraph implements MouseListener, ChangeL
 		}				
 	}
 	
-	protected void addInput(IVariable argVar, Object parent, boolean isNamed)
+	protected void doAddInput(IVariable argVar, Object parent, boolean isNamed)
 	{
 		if (notIn(argVar))
 		{
@@ -256,7 +258,7 @@ public class ObjectGraphViewer extends mxGraph implements MouseListener, ChangeL
 			
 			for (IVariable var : list)
 			{ 
-				addInput(var, parent, true);
+				doAddInput(var, parent, true);
 			}
 			
 		}
@@ -266,6 +268,12 @@ public class ObjectGraphViewer extends mxGraph implements MouseListener, ChangeL
 		}
 			
 			
+		mxFastOrganicLayout layout = new mxFastOrganicLayout(this);
+		
+		layout.execute(parent);
+		
+		refresh();
+		
 /*		mxStackLayout layout = new mxStackLayout(this, false) {
 		    	 @Override
 		    	 public mxRectangle getContainerSize()
@@ -311,6 +319,13 @@ public class ObjectGraphViewer extends mxGraph implements MouseListener, ChangeL
 	    	addInput(ivar, getDefaultParent(), false);
 	    }
 		}
+	}
+
+	private void addInput(IVariable ivar, Object parent, boolean b) {
+		// TODO Auto-generated method stub
+		ArrayList<IVariable> list = new ArrayList<IVariable>(1);
+		list.add(ivar);
+		addInput(list);
 	}
 
 	@Override
