@@ -1,38 +1,35 @@
-
-
 package org.eclipse.contrib.debug.model;
 
 import java.io.IOException;
-import java.io.Serializable;
 
 import org.eclipse.contrib.debug.control.TypenameModifier;
 import org.eclipse.debug.core.DebugException;
-import org.eclipse.debug.core.model.IValue;
 import org.eclipse.debug.core.model.IVariable;
 
-/**
- * @author didier
- * 
- * a serializable Wrapper of IVariable's contrete descendants
- * 
- * This has been made necessary to avoid NotSerialisable exception thrown on
- * awt drag 'n drop of a graph cell. 
- */
-public class Variable implements Serializable {
+public class Variable {
 
-	private static final long serialVersionUID = -7665943218834959525L;
+	private String cachedName;
+	private String cachedReferenceTypeName;
 	
 	private IVariable variable;
-	
-	/**
-	 * keep track of variable's name when a graph cell is dragged.
-	 */
-	protected String cachedReferenceTypeName,
-	                 cachedValue;
 
-	public Variable(IVariable var)
-	{
+	protected Variable(IVariable var) {
 		variable = var;
+	}
+	
+	public Variable()
+	{	
+	}
+	
+	static Variable makeVariable(IVariable var)
+	{
+		try {
+			return var.getValue().hasVariables() ? new ReferenceVariable(var) : new LiteralVariable(var);
+		} catch (DebugException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return null;
+		}
 	}
 	
 	public IVariable getVariable()
@@ -40,73 +37,65 @@ public class Variable implements Serializable {
 		return variable;
 	}
 	
-	
 	/**
 	 * Gives cell's content when dragged.
 	 */
+	@Override
 	public String toString()
 	{
-		String string = "<No Type>";
+		String name = null;
 		try
 		{
-			string = variable != null ? variable.getReferenceTypeName() : cachedReferenceTypeName;
-			
-			string = TypenameModifier.modify(string);
-			
-			IValue value = variable != null ? variable.getValue() : null;
-			if (value != null)
-			{
-			if (!value.hasVariables())
-			{
-				string += " := " + value.getValueString();
-			}
-			}
-			else if (cachedValue != null)
-			{
-				string += " := " + cachedValue;
-			}
-				
-			
-			return string;
+			name = getVariable() != null ? getVariable().getName() : cachedName;
 		}
 		catch (DebugException e)
 		{
-			return string;
+			e.printStackTrace();
+			name = "<NoName>";
 		}
+		
+		String type = null;
+		
+		try
+		{
+			type = getVariable() != null ? getVariable().getReferenceTypeName() : cachedReferenceTypeName;
+			type = TypenameModifier.modify(type);
+		}
+		catch (DebugException e)
+		{
+			type = "<NoType>";
+			e.printStackTrace();
+		}
+		
+		return name + " : " + type;
+
 	}
 	
-	protected void writeObjectHelper(java.io.ObjectOutputStream out)
+	protected void doWriteObject(java.io.ObjectOutputStream out)
 		     throws IOException
 		     {
 		     try {
-				out.writeObject(variable.getReferenceTypeName());
-				if (variable.getValue().hasVariables())
-				{
-					out.writeObject(null);
-				}
-				else
-				{
-				out.writeObject(variable.getValue().getValueString());
-				}
+				out.writeObject(getVariable().getName());
+				out.writeObject(getVariable().getReferenceTypeName());
 			} catch (DebugException e) {}
 		    }
-	
-	private void writeObject(java.io.ObjectOutputStream out)
-		     throws IOException
-		     {
-		     writeObjectHelper(out);
-		     }
-	
-	protected void readObjectHelper(java.io.ObjectInputStream in)
+		
+   protected void doReadObject(java.io.ObjectInputStream in)
 		     throws IOException, ClassNotFoundException
 		     {
+			 cachedName = (String) in.readObject();
 			 cachedReferenceTypeName = (String) in.readObject();
-			 cachedValue = (String) in.readObject();
 		     }
-	
-	private void readObject(java.io.ObjectInputStream in)
+   
+   private void writeObject(java.io.ObjectOutputStream out)
+		     throws IOException
+   {
+   doWriteObject(out);
+   }
+		
+ private void readObject(java.io.ObjectInputStream in)
 		     throws IOException, ClassNotFoundException
-		     {
-		     readObjectHelper(in);
-		     }
+   {
+   doReadObject(in);
+   }
 }

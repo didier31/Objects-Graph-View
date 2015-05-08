@@ -24,6 +24,6 @@ public class Controller {
 
 	@SuppressWarnings("unchecked")
 	public void addGraphInput(@SuppressWarnings("rawtypes") List list) {
-		objectGraph.addInput((List<IVariable>) list);
+		objectGraph.addVariables((List<IVariable>) list);
 	}
 }
