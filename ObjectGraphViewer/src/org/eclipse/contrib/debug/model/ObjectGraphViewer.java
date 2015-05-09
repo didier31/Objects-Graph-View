@@ -62,12 +62,6 @@ public class ObjectGraphViewer extends mxGraph implements MouseListener, KeyList
 		TypenameModifier.addChangeListener(this);
 	}
 	
-	protected boolean notIn(Object arg)
-	{
-		mxGraphModel model = (mxGraphModel) getModel();
-		return model.getCell(Integer.toString(arg.hashCode())) == null;
-	}
-	
 	protected void connectToExisting(mxCell newcell) 
 	{	
 		Object variable = newcell.getValue();
@@ -207,29 +201,6 @@ public class ObjectGraphViewer extends mxGraph implements MouseListener, KeyList
 //		}				
 	}
 	
-	protected void addReferencedValue(IValue value, Object parent)
-	{
-		if (notIn(value))
-		{
-			
-			try {
-				getModel().beginUpdate();		
-				
-		
-	    /**
-	     * Insert dereferenced value cell
-	     */
-	    
-	    mxCell cell = CellBuilder.make(value, parent, this);	  
-	    
-			}
-			finally
-			{
-				getModel().endUpdate();
-			}
-		}
-	}
-	
 	static int groupNumber = 0;
 	
 	public void addVariables(List<IVariable> list)
@@ -283,7 +254,8 @@ public class ObjectGraphViewer extends mxGraph implements MouseListener, KeyList
 	    {	    
 	    	try {
 	    		getModel().beginUpdate();	
-				CellBuilder.make(var.getVariable().getValue(), getDefaultParent(), this);
+	    		mxCell refVarCell = CellBuilder.make(var.getVariable().getValue(), getDefaultParent(), this);
+	    		CellBuilder.connectWithExisting(cell, this);
 			} catch (DebugException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();

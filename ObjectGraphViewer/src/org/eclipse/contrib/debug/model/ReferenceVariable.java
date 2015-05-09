@@ -11,9 +11,10 @@ public class ReferenceVariable extends Variable implements Serializable {
 	 * 
 	 */
 	private static final long serialVersionUID = 5945188852908478301L;
-
+	
 	public ReferenceVariable()
-	{	
+	{
+		super();
 	}
 	
 	public ReferenceVariable(IVariable var) {

@@ -6,19 +6,21 @@ import org.eclipse.contrib.debug.control.TypenameModifier;
 import org.eclipse.debug.core.DebugException;
 import org.eclipse.debug.core.model.IVariable;
 
-public class Variable {
+abstract public class Variable {
 
 	private String cachedName;
 	private String cachedReferenceTypeName;
 	
 	private IVariable variable;
 
-	protected Variable(IVariable var) {
-		variable = var;
+	public Variable()
+	{
+		cachedName = "";
+		cachedReferenceTypeName = cachedName;
 	}
 	
-	public Variable()
-	{	
+	public Variable(IVariable var) {
+		variable = var;
 	}
 	
 	static Variable makeVariable(IVariable var)

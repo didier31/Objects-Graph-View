@@ -19,6 +19,11 @@ public class LiteralVariable extends Variable implements Serializable {
 		// TODO Auto-generated constructor stub
 	}
 
+	public LiteralVariable()
+	{
+		super();
+		cachedValue = "";
+	}
 	
 	public String toString()
 	{
@@ -30,20 +35,25 @@ public class LiteralVariable extends Variable implements Serializable {
 			e.printStackTrace();
 			value = "<No Value>";
 		}
-		return super.toString() +  " : " + value;
+		return super.toString() +  " := " + value;
 	}
 	
 	private void writeObject(java.io.ObjectOutputStream out)
 		     throws IOException
 		     {
+		     doWriteObject(out);
 		     try {
 				out.writeObject(getVariable().getValue().getValueString());
-			} catch (DebugException e) {}
+			} catch (DebugException e) 
+		     {
+				out.writeObject("<No type>");
+		     }
 		    }
 		
- private void readObject(java.io.ObjectInputStream in)
+    private void readObject(java.io.ObjectInputStream in)
 		     throws IOException, ClassNotFoundException
 		     {
+    	     doReadObject(in);
 	         cachedValue = (String) in.readObject();
 		     }	
 }
