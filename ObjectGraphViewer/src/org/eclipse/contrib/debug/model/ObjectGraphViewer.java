@@ -27,6 +27,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import com.mxgraph.analysis.mxAnalysisGraph;
+import com.mxgraph.io.mxCellCodec;
 import com.mxgraph.layout.mxFastOrganicLayout;
 import com.mxgraph.layout.mxStackLayout;
 import com.mxgraph.layout.hierarchical.mxHierarchicalLayout;
@@ -64,156 +65,26 @@ public class ObjectGraphViewer extends mxGraph implements MouseListener, KeyList
 	
 	protected void connectToExisting(mxCell newcell) 
 	{	
-		Object variable = newcell.getValue();
 		
-		if (variable instanceof ReferenceVariable)
-		{
-			ReferenceVariable reference = (ReferenceVariable) variable;
-			IVariable var = reference.getVariable();
-			try {
-				IValue value = var.getValue();
-				mxGraphModel model = (mxGraphModel) getModel();
-				mxCell existingReferencedVariableCell = (mxCell) model.getCell(Integer.toString(value.hashCode()));
-				insertEdge(getDefaultParent(), null, var.getName(), newcell, existingReferencedVariableCell, null);
-			} catch (DebugException e) {
-				e.printStackTrace();
-			}
-		}
-		else if (variable instanceof ReferencedValue)
-		{
-			
-		}
-		
-		
-//		mxCell rootCell = ((mxCell) getDefaultParent());
-//		
-//		/**
-//		 * Gets all existing top-level vertex
-//		 */
-//		mxICell rootVertex[] = new mxICell[rootCell.getChildCount()];
-//		int vertexCount = 0;
-//		for (int i = 0; i < rootCell.getChildCount(); i++)
-//		{
-//		rootVertex[vertexCount] = rootCell.getChildAt(i);
-//		if (rootVertex[vertexCount].isVertex())
-//		{
-//			vertexCount++;
-//		}
-//		}
-//		
-//		IVariable newvar = (((ReferencedValue) newcell.getValue()).getVariable());  
-//		
-//		/** 
-//		 * Connect existing fields to new var 
-//		 */
-//		for (int i = 0; i < vertexCount; i++)
-//		{
-//			// Get a variable at top-level
-//			mxICell existingCell = rootVertex[i];
-//			/**
-//			 * For each attribute of this variable 
-//			 */
-//			for (int j = 0; j < existingCell.getChildCount(); j++)
-//			{				
-//				mxICell existingField = existingCell.getChildAt(j);
-//				
-//				if (existingField.isVertex())
-//				{				
-//				ReferencedValue field  = (ReferencedValue) existingField.getValue();
-//				
-//				IVariable attribute = field.getVariable();				
-//			
-//				boolean fieldIsReference;
-//				try {
-//					fieldIsReference = attribute.getValue().hasVariables();
-//				} catch (DebugException e) {
-//					fieldIsReference = false;
-//					e.printStackTrace();
-//				}
-//				
-//				if (fieldIsReference)
-//				{																		
-//				try {
-//					if (newvar.getValue().equals(attribute.getValue()))
-//					{
-//						String linkName = "<NoName>";
-//						try {
-//							ReferencedValue var = (ReferencedValue) existingField.getValue();
-//							IVariable ivar = var.getVariable();
-//							linkName = ivar.getName();
-//						} catch (DebugException e) {
-//							// TODO Auto-generated catch block
-//							e.printStackTrace();
-//						}
-//						insertEdge(existingCell, null, linkName, existingField, newcell, null);
-//					}
-//				} catch (DebugException e) {
-//					// TODO Auto-generated catch block
-//					e.printStackTrace();
-//				}		
-//				}
-//			}
-//			}
-//		}
-//		
-//		/**
-//		 *  Connect newcell's fields to existing cells
-//		 */		
-//		for (int i = 0; i < newcell.getChildCount(); i++)
-//		{
-//			mxICell newcellField = newcell.getChildAt(i);
-//			IVariable attribute = ((ReferencedValue) newcellField.getValue()).getVariable();		
-//			
-//			boolean fieldIsReference;
-//			try {
-//				fieldIsReference = attribute.getValue().hasVariables();
-//			} catch (DebugException e) {
-//				fieldIsReference = false;
-//				e.printStackTrace();
-//			}
-//			
-//			if (fieldIsReference)
-//			{		
-//			for (int j = 0; j < vertexCount; j++)
-//			{
-//				mxICell existingCell = rootVertex[j];				
-//				
-//				IVariable var = ((ReferencedValue) existingCell.getValue()).getVariable();
-//				
-//				try {
-//					if (attribute.getValue().equals(var.getValue()))
-//					{
-//						String linkName = "<NoName>";
-//						try {
-//							linkName = var.getName();
-//						} catch (DebugException e) {
-//							// TODO Auto-generated catch block
-//							e.printStackTrace();
-//						}
-//						insertEdge(existingCell, null, linkName, newcellField, existingCell, null);
-//					}
-//				} catch (DebugException e) {
-//					// TODO Auto-generated catch block
-//					e.printStackTrace();
-//				}				
-//			}
-//			}
-//		}				
 	}
 	
 	static int groupNumber = 0;
 	
 	public void addVariables(List<IVariable> list)
-    {	
-		mxCell parent = (mxCell) getDefaultParent();		
+    {			
 		try {
 			getModel().beginUpdate();		
 			
 			for (IVariable var : list)
 			{ 
-				mxCell cell = CellBuilder.make(var, parent, this);
+				Object group = insertVertex(getDefaultParent(), "grp" + Integer.toString(groupNumber), 
+						                    null, -10, -10, 800, 200);
+				enterGroup(group);
+				mxCell cell = CellBuilder.make(var, null, this);
 				connectToExisting(cell);
-			}						
+				groupNumber++;
+				exitGroup();
+			}					
 		}
 		finally
 		{
@@ -254,7 +125,7 @@ public class ObjectGraphViewer extends mxGraph implements MouseListener, KeyList
 	    {	    
 	    	try {
 	    		getModel().beginUpdate();	
-	    		mxCell refVarCell = CellBuilder.make(var.getVariable().getValue(), getDefaultParent(), this);
+	    		mxCell refVarCell = CellBuilder.make(var.getVariable().getValue(), cell.getParent(), this);
 	    		CellBuilder.connectWithExisting(cell, this);
 			} catch (DebugException e1) {
 				// TODO Auto-generated catch block
