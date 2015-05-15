@@ -1,49 +1,29 @@
 package org.eclipse.contrib.debug.model;
 
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.Hashtable;
 import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
-
 import org.eclipse.contrib.debug.control.TypenameModifier;
+import org.eclipse.contrib.debug.layout.TreeLayout;
 import org.eclipse.contrib.debug.ui.view.ObjectGraphViewPart;
 import org.eclipse.debug.core.DebugException;
-import org.eclipse.debug.core.model.IValue;
 import org.eclipse.debug.core.model.IVariable;
-import org.eclipse.jdt.internal.debug.core.model.JDIValue;
-import org.eclipse.swt.graphics.Point;
-
-import java.awt.Color;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 
-import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import com.mxgraph.analysis.mxAnalysisGraph;
-import com.mxgraph.io.mxCellCodec;
-import com.mxgraph.layout.mxFastOrganicLayout;
-import com.mxgraph.layout.mxStackLayout;
-import com.mxgraph.layout.hierarchical.mxHierarchicalLayout;
 import com.mxgraph.model.mxCell;
-import com.mxgraph.model.mxGraphModel;
-import com.mxgraph.model.mxICell;
 import com.mxgraph.swing.mxGraphComponent;
-import com.mxgraph.util.mxConstants;
-import com.mxgraph.util.mxRectangle;
 import com.mxgraph.view.mxGraph;
 
 public class ObjectGraphViewer extends mxGraph implements MouseListener, KeyListener, ChangeListener {
 	
 	private ObjectGraphViewPart viewPart;
 	private mxGraphComponent graphComponent;
-	private List<ChangeListener> listOfChangeListener = new ArrayList<ChangeListener>(1); 
+	private Hashtable<Object, mxCell> varSources = new Hashtable<Object, mxCell>(6);
 
 	public mxGraphComponent getGraphComponent() {
 		return graphComponent;
@@ -63,11 +43,6 @@ public class ObjectGraphViewer extends mxGraph implements MouseListener, KeyList
 		TypenameModifier.addChangeListener(this);
 	}
 	
-	protected void connectToExisting(mxCell newcell) 
-	{	
-		
-	}
-	
 	static int groupNumber = 0;
 	
 	public void addVariables(List<IVariable> list)
@@ -81,7 +56,7 @@ public class ObjectGraphViewer extends mxGraph implements MouseListener, KeyList
 						                    null, -10, -10, 800, 200);
 				enterGroup(group);
 				mxCell cell = CellBuilder.make(var, null, this);
-				connectToExisting(cell);
+				varSources.put(group, cell);
 				groupNumber++;
 				exitGroup();
 			}					
@@ -123,10 +98,18 @@ public class ObjectGraphViewer extends mxGraph implements MouseListener, KeyList
 		
 	    if (var instanceof ReferenceVariable)
 	    {	    
+    		mxCell parent = (mxCell) cell.getParent();
+    		if (!parent.getId().startsWith("grp"))
+    		{
+    			parent = (mxCell) parent.getParent();
+    		}
 	    	try {
 	    		getModel().beginUpdate();	
-	    		mxCell refVarCell = CellBuilder.make(var.getVariable().getValue(), cell.getParent(), this);
+	    		CellBuilder.make(var.getVariable().getValue(), parent, this);
 	    		CellBuilder.connectWithExisting(cell, this);
+	    		TreeLayout layout = new TreeLayout(this);
+	    		mxCell source = varSources.get(parent);
+	    		layout.execute(parent, source);	    		
 			} catch (DebugException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
@@ -184,63 +167,20 @@ public class ObjectGraphViewer extends mxGraph implements MouseListener, KeyList
 		{
 		}}
 	
-	public void removeCell()
+	public void removeVariable()
 	{
 		
 		    Object cellsToRemove[] = getSelectionCells();
 		
-			List<mxICell> removedCells = new LinkedList<mxICell>();
 			for (Object cell : cellsToRemove)
 			{
-				removedCells.add((mxICell) cell);
-			}
-			
-			// accumulator of cells to examine their childs in computation of connected cells to cells to remove 
-			Set<mxICell> cellsToExplore = new TreeSet<mxICell>();
-			cellsToExplore.addAll(removedCells);
-			
-			// Cells connected to the selections (i.e candidates to be removed too)
-			Set<mxICell> connectedCells = new TreeSet<mxICell>();
-			/**
-			 * Makes the connected cells graph
-			 */
-			while (!cellsToExplore.isEmpty())
-			{
-				for (Iterator<mxICell> it = cellsToExplore.iterator(); it.hasNext();)
+				if (varSources.contains(cell))
 				{
-					mxICell current = it.next();
-					connectedCells.add(current);
-					mxCell edges[] = (mxCell[]) getEdges(current, null, false, true, true, true); 
-					for (mxCell edge : edges)						
-					{
-						mxICell t2 = (mxICell) edge.getTarget();
-						if (!connectedCells.contains(t2))
-						{
-							cellsToExplore.add(t2);
-						}
-					}
-				}
-			}			
-			
-			/**
-			 * Among the connected cells, 
-			 * hold the ones that are target from outside.
-			 */
-			
-			for (Iterator<mxICell> connectedCellsIt = connectedCells.iterator(); connectedCellsIt.hasNext();)
-			{
-				mxICell connectedCell = connectedCellsIt.next();
-				mxCell incomingEdges[] = (mxCell[]) getEdges(connectedCell, null, true, false, true, true);
-				for (mxCell incomingEdge : incomingEdges)
-				{
-					mxCell sourceCell = (mxCell) incomingEdge.getSource().getParent();
-					if (!connectedCells.contains(sourceCell))
-					{
-						connectedCells.remove(incomingEdge.getTarget());
-					}
+					Object parent = ((mxCell) cell).getParent();
+					varSources.remove(parent);
+					removeCells(new Object[]{parent});
 				}
 			}
-			
 		}		
 
 	@Override

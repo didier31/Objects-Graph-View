@@ -53,7 +53,7 @@ public class ObjectGraphViewPart extends ViewPart {
     	   @Override
     	   public void run()
     	       { 
-    		   ObjectGraphViewPart.this.getGraph().removeCell(); 
+    		   ObjectGraphViewPart.this.getGraph().removeVariable(); 
     		   } 
     	   };
     	   action.setEnabled(true);

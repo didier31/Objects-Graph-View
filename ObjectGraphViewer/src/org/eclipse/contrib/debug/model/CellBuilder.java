@@ -8,7 +8,6 @@ import com.mxgraph.layout.mxStackLayout;
 import com.mxgraph.model.mxCell;
 import com.mxgraph.model.mxGraphModel;
 import com.mxgraph.util.mxConstants;
-import com.mxgraph.view.mxGraph;
 
 public class CellBuilder {
 	
@@ -55,6 +54,8 @@ static protected void connectWithExisting(mxCell refVarCell, ObjectGraphViewer g
 	}
 	int referencedId = referencedValue.hashCode();
 	mxCell referencedCell = (mxCell) model.getCell(Integer.toString(referencedId));
+	if (referencedCell != null)
+	{
 	String name;
 	try {
 		name = refIvar.getName();
@@ -63,7 +64,10 @@ static protected void connectWithExisting(mxCell refVarCell, ObjectGraphViewer g
 		e.printStackTrace();
 		name = "<No name>";
 	}
-	graph.insertEdge(graph.getDefaultParent(), null, name, refVarCell, referencedCell, null);
+	/*graph.insertEdge(model.getNearestCommonAncestor(refVarCell, referencedCell), 
+			         null, name, refVarCell, referencedCell, null); */
+	graph.insertEdge(refVarCell, null, name, refVarCell, referencedCell, null);
+	}
 	}
 }
 
