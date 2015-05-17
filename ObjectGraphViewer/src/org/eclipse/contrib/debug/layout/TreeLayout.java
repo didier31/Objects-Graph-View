@@ -13,8 +13,8 @@ import com.mxgraph.view.mxGraph;
 public class TreeLayout {
 	
 	private mxGraph graph;
-	private double YSPACE = 10;
-	private double XSPACE = 10;
+	private double YSPACE = 50;
+	private double XSPACE = 50;
 	
 	private mxCell group;
 	private Set<mxCell> cellsAlReadySeen;
@@ -30,7 +30,8 @@ public class TreeLayout {
 		cells.add(source);
 		group = parent;
 		cellsAlReadySeen = new HashSet<mxCell>();
-		place(cells, parent.getGeometry().getX(),  parent.getGeometry().getY());
+		place(cells, 0, 0);
+		//graph.updateGroupBounds(new Object[]{parent});
 		graph.refresh();
 	}
 
@@ -70,7 +71,7 @@ public class TreeLayout {
 			{
 				double ymin = y;
 				y = place(nextVertices, x0 + maxWidth + XSPACE, y);
-				double ymax = y;
+				double ymax = y - YSPACE;
 				geometry.setY((ymin + ymax - geometry.getHeight()) / 2);
 			}
 			y += YSPACE;

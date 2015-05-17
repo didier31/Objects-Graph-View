@@ -20,6 +20,7 @@ Export-Package: org.eclipse.albireo.core,
 Import-Package: com.sun.jdi,
  org.eclipse.debug.internal.ui.views.variables,
  org.eclipse.debug.ui,
+ org.eclipse.jdt.debug.core,
  org.eclipse.jdt.internal.debug.core.model
 Bundle-ClassPath: .,
  lib/org.eclipse.albireo.core_0.0.3.v20081031.jar

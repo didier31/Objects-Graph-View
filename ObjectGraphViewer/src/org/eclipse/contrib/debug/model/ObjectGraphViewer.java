@@ -2,11 +2,14 @@ package org.eclipse.contrib.debug.model;
 
 import java.util.Hashtable;
 import java.util.List;
+
 import org.eclipse.contrib.debug.control.TypenameModifier;
 import org.eclipse.contrib.debug.layout.TreeLayout;
 import org.eclipse.contrib.debug.ui.view.ObjectGraphViewPart;
 import org.eclipse.debug.core.DebugException;
+import org.eclipse.debug.core.model.IValue;
 import org.eclipse.debug.core.model.IVariable;
+
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
@@ -17,6 +20,7 @@ import javax.swing.event.ChangeListener;
 
 import com.mxgraph.model.mxCell;
 import com.mxgraph.swing.mxGraphComponent;
+import com.mxgraph.util.mxConstants;
 import com.mxgraph.view.mxGraph;
 
 public class ObjectGraphViewer extends mxGraph implements MouseListener, KeyListener, ChangeListener {
@@ -38,9 +42,12 @@ public class ObjectGraphViewer extends mxGraph implements MouseListener, KeyList
 		setCellsDeletable(true);
 		setCellsCloneable(false);
 		setCellsDisconnectable(false);
-		setCellsResizable(false);	
+		setCellsResizable(true);	
 		setDropEnabled(false);
-		TypenameModifier.addChangeListener(this);
+		setExtendParents(true);
+		setExtendParentsOnAdd(true);
+		setPortsEnabled(true);
+		TypenameModifier.addChangeListener(this);		
 	}
 	
 	static int groupNumber = 0;
@@ -52,10 +59,10 @@ public class ObjectGraphViewer extends mxGraph implements MouseListener, KeyList
 			
 			for (IVariable var : list)
 			{ 
-				Object group = insertVertex(getDefaultParent(), "grp" + Integer.toString(groupNumber), 
+				mxCell group = (mxCell) insertVertex(getDefaultParent(), "grp" + Integer.toString(groupNumber), 
 						                    null, -10, -10, 800, 200);
 				enterGroup(group);
-				mxCell cell = CellBuilder.make(var, null, this);
+				mxCell cell = CellManager.make(var, null, this);
 				varSources.put(group, cell);
 				groupNumber++;
 				exitGroup();
@@ -81,7 +88,8 @@ public class ObjectGraphViewer extends mxGraph implements MouseListener, KeyList
 
 	public void setGraphComponent(mxGraphComponent graphComponent) {
 		// TODO Auto-generated method stub
-		this.graphComponent = graphComponent;	
+		this.graphComponent = graphComponent;
+		getGraphComponent().getGraphHandler().setRemoveCellsFromParent(false);
 		
 		getGraphComponent().getGraphControl().addMouseListener(ObjectGraphViewer.this);
 		getGraphComponent().getGraphControl().addKeyListener(ObjectGraphViewer.this);
@@ -92,24 +100,39 @@ public class ObjectGraphViewer extends mxGraph implements MouseListener, KeyList
 		if (e.getClickCount() == 2)
 		{
 		mxCell cell = (mxCell) getGraphComponent().getCellAt(e.getX(), e.getY());
-		if (cell.isVertex())
+		if (cell.getValue() instanceof ReferenceVariable)
 		{
-		Variable var = (Variable) cell.getValue();	
-		
-	    if (var instanceof ReferenceVariable)
-	    {	    
+		ReferenceVariable var = (ReferenceVariable) cell.getValue();	
+
     		mxCell parent = (mxCell) cell.getParent();
     		if (!parent.getId().startsWith("grp"))
     		{
     			parent = (mxCell) parent.getParent();
     		}
 	    	try {
-	    		getModel().beginUpdate();	
-	    		CellBuilder.make(var.getVariable().getValue(), parent, this);
-	    		CellBuilder.connectWithExisting(cell, this);
-	    		TreeLayout layout = new TreeLayout(this);
-	    		mxCell source = varSources.get(parent);
-	    		layout.execute(parent, source);	    		
+	    		getModel().beginUpdate();
+	    		IValue ivalue = var.getVariable().getValue();
+	    		mxCell referencedCell = CellManager.existingVertex(ivalue, this);
+	    		if (getEdges(cell, null, false, true, false).length == 0)
+	    		{	    		 
+	    		if (referencedCell == null)
+	    		{
+	    			CellManager.make(ivalue, parent, this);
+	    		}
+	    		CellManager.connectWithExisting(cell, this);
+    		    TreeLayout layout = new TreeLayout(this);
+    		    mxCell source = varSources.get(parent);
+    		   layout.execute(parent, source);
+	    		}
+	    		else
+	    		{
+	    			// If the referenced Cell is in the same group as the source
+	    			// then it can be deleted with its subsequents cells.
+	    			if (referencedCell.getParent() == parent)
+	    			{
+	    				CellManager.removeSubsequentCells(referencedCell, this);
+	    			}
+	    		}
 			} catch (DebugException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
@@ -119,7 +142,6 @@ public class ObjectGraphViewer extends mxGraph implements MouseListener, KeyList
 				getModel().endUpdate();
 			}
 	    }
-		} 
 		} 
 	}
 
@@ -174,11 +196,18 @@ public class ObjectGraphViewer extends mxGraph implements MouseListener, KeyList
 		
 			for (Object cell : cellsToRemove)
 			{
+				// Is the source var ?
 				if (varSources.contains(cell))
 				{
 					Object parent = ((mxCell) cell).getParent();
 					varSources.remove(parent);
 					removeCells(new Object[]{parent});
+				}
+				// Is it the group ?
+				else if (varSources.containsKey(cell))
+				{
+					varSources.remove(cell);
+					removeCells(new Object[]{cell});
 				}
 			}
 		}		
