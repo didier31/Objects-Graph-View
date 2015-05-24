@@ -20,7 +20,6 @@ import javax.swing.event.ChangeListener;
 
 import com.mxgraph.model.mxCell;
 import com.mxgraph.swing.mxGraphComponent;
-import com.mxgraph.util.mxConstants;
 import com.mxgraph.view.mxGraph;
 
 public class ObjectGraphViewer extends mxGraph implements MouseListener, KeyListener, ChangeListener {
@@ -63,6 +62,7 @@ public class ObjectGraphViewer extends mxGraph implements MouseListener, KeyList
 						                    null, -10, -10, 800, 200);
 				enterGroup(group);
 				mxCell cell = CellManager.make(var, null, this);
+				((Additional) cell.getValue()).setRank(0);
 				varSources.put(group, cell);
 				groupNumber++;
 				exitGroup();
@@ -104,10 +104,18 @@ public class ObjectGraphViewer extends mxGraph implements MouseListener, KeyList
 		{
 		ReferenceVariable var = (ReferenceVariable) cell.getValue();	
 
-    		mxCell parent = (mxCell) cell.getParent();
-    		if (!parent.getId().startsWith("grp"))
+		    // Init in case of the reference is the root of the graph 
+    		mxCell group = (mxCell) cell.getParent();
+    		mxCell sourceForLayout;   
+    		// Init of group in case the reference variable is a field of a class    		
+    		if (!group.getId().startsWith("grp"))
     		{
-    			parent = (mxCell) parent.getParent();
+    			sourceForLayout = group;
+    			group = (mxCell) group.getParent();
+    		}
+    		else
+    		{
+    			sourceForLayout = cell;
     		}
 	    	try {
 	    		getModel().beginUpdate();
@@ -117,18 +125,22 @@ public class ObjectGraphViewer extends mxGraph implements MouseListener, KeyList
 	    		{	    		 
 	    		if (referencedCell == null)
 	    		{
-	    			CellManager.make(ivalue, parent, this);
+	    			referencedCell = CellManager.make(ivalue, cell, group, this);
 	    		}
-	    		CellManager.connectWithExisting(cell, this);
+	    		else
+	    		{
+	    			CellManager.connectWithExisting(cell, this);
+	    		}
     		    TreeLayout layout = new TreeLayout(this);
-    		    mxCell source = varSources.get(parent);
-    		   layout.execute(parent, source);
+
+    		    mxCell source = varSources.get(group);
+    		    layout.execute(group, source);
 	    		}
 	    		else
 	    		{
 	    			// If the referenced Cell is in the same group as the source
 	    			// then it can be deleted with its subsequents cells.
-	    			if (referencedCell.getParent() == parent)
+	    			if (referencedCell.getParent() == group)
 	    			{
 	    				CellManager.removeSubsequentCells(referencedCell, this);
 	    			}

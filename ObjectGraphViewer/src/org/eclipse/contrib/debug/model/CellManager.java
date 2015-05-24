@@ -1,18 +1,19 @@
 package org.eclipse.contrib.debug.model;
 
 import java.util.Arrays;
-import java.util.HashSet;
-import java.util.LinkedList;
+import java.util.Stack;
 
+import org.eclipse.contrib.debug.model.IterationOnTree.Action;
+import org.eclipse.contrib.debug.model.IterationOnTree.StopCondition;
 import org.eclipse.debug.core.DebugException;
 import org.eclipse.debug.core.model.IValue;
 import org.eclipse.debug.core.model.IVariable;
 import org.eclipse.jdt.debug.core.IJavaVariable;
+import org.eclipse.ui.application.ActionBarAdvisor;
 
 import com.mxgraph.layout.mxStackLayout;
 import com.mxgraph.model.mxCell;
 import com.mxgraph.model.mxGraphModel;
-import com.mxgraph.model.mxICell;
 import com.mxgraph.util.mxConstants;
 
 public class CellManager {
@@ -74,22 +75,30 @@ static public void connectWithExisting(mxCell refVarCell, ObjectGraphViewer grap
 	}
 	final String edgeStyle = "edgeStyle=orthogonalEdgeStyle"; 
 	graph.insertEdge(refVarCell, null, name, refVarCell, referencedCell, edgeStyle);
+	Additional rankOfReferencedValue = (Additional) referencedCell.getValue(),
+	     rankOfReference = refVarCell.getParent().getId().startsWith("grp") ? (Additional) refVarCell.getValue() 
+	    		                                                            : (Additional) refVarCell.getParent().getValue();
+	rankOfReferencedValue.setRank(rankOfReference.getRank() + 1);
 	}
 	}
 }
 
-static public mxCell make(IValue value, Object parent, ObjectGraphViewer graph)
+static public mxCell make(IValue value, mxCell previous, Object parent, ObjectGraphViewer graph)
 {	
 	ReferencedValue record = new ReferencedValue(value);
+	record.setPrevious(previous);
+	
 	String style = mxConstants.STYLE_AUTOSIZE + ";" 
 	             + mxConstants.STYLE_MOVABLE + ";"
 	             + mxConstants.STYLE_SHAPE + "=" + mxConstants.SHAPE_SWIMLANE + ";"
 	             + mxConstants.STYLE_RESIZABLE + "=0;"
+	             +";" + "portConstraint=west"
 			     + mxConstants.STYLE_SPACING_LEFT + "=10.0";
 	
 
     mxCell cell = (mxCell) graph.insertVertex(parent, String.valueOf(value.hashCode()), record,
 			                                  0, 0, 0, 0, style, false);
+    CellManager.connectWithExisting(previous, graph);
 	IVariable fields[] = null;
 	try {
 		fields = value.getVariables();
@@ -153,29 +162,22 @@ static public mxCell make(IValue value, Object parent, ObjectGraphViewer graph)
 }
 
 public static void removeSubsequentCells(Object sourceCellToRemove,
-		ObjectGraphViewer objectGraphViewer) {
-	    removeSubsequentCellsR(sourceCellToRemove, objectGraphViewer);
+		                                 ObjectGraphViewer objectGraphViewer) {
+	
+	IterationOnTree.Action removeCell = new IterationOnTree.Action() {
+
+	    @Override
+	    public void perform(mxCell cell, ObjectGraphViewer objectGraphViewer) 
+	    {
+		objectGraphViewer.removeCells(new Object[]{cell}, true);
+	    }		
+        };
+	
+    IterationOnTree removeSubsequentCells = new IterationOnTree(objectGraphViewer,
+	                                                            null, 
+			                                                    removeCell,
+			                                                    null);
+    removeSubsequentCells.perform(sourceCellToRemove);	
 }
 
-public static void removeSubsequentCellsR(Object sourceCellToRemove,
-		ObjectGraphViewer objectGraphViewer) {
-
-mxCell sourceCellToDelete = (mxCell) sourceCellToRemove;
-LinkedList<mxCell> targetsToRemove = new LinkedList<mxCell>();
-Object edges[] = objectGraphViewer.getAllEdges(new Object[]{sourceCellToRemove});
-for (Object edgeObject : edges)
-{
-	mxCell edge = (mxCell) edgeObject;
-	mxCell target = (mxCell) edge.getTerminal(false);
-	if (target != sourceCellToDelete && target.getParent() == sourceCellToDelete.getParent())
-	{
-		targetsToRemove.add(target);
-	}
-}
-objectGraphViewer.removeCells(new Object[]{sourceCellToDelete}, true);
-for (mxICell targetToRemove : targetsToRemove)
-{
-	removeSubsequentCellsR(targetToRemove, objectGraphViewer);
-}
-}
 }

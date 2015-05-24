@@ -17,17 +17,17 @@ import org.eclipse.debug.core.model.IValue;
  * This has been made necessary to avoid NotSerialisable exception thrown on
  * awt drag 'n drop of a graph cell. 
  */
-public class ReferencedValue implements Serializable {
+public class ReferencedValue extends Additional implements Serializable {
 
 	private static final long serialVersionUID = -7665943218834959525L;
 	
 	private IValue value;
 	
-	private String cachedReferenceTypeName;
-	
+	private String cachedReferenceTypeName;	
 	
 	public ReferencedValue(IValue value)
 	{
+		super();
 		this.value = value;
 	}
 	

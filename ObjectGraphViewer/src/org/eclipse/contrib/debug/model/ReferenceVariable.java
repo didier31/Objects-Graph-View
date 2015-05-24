@@ -18,7 +18,7 @@ public class ReferenceVariable extends Variable implements Serializable {
 	}
 	
 	public ReferenceVariable(IVariable var) {
-		super(var);
+		super(var);		
 	}
 
 	

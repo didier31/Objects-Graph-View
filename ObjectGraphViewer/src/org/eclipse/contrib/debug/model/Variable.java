@@ -6,7 +6,7 @@ import org.eclipse.contrib.debug.control.TypenameModifier;
 import org.eclipse.debug.core.DebugException;
 import org.eclipse.debug.core.model.IVariable;
 
-abstract public class Variable {
+abstract public class Variable extends Additional {
 
 	private String cachedName;
 	private String cachedReferenceTypeName;
@@ -16,11 +16,12 @@ abstract public class Variable {
 	public Variable()
 	{
 		cachedName = "";
-		cachedReferenceTypeName = cachedName;
+		cachedReferenceTypeName = cachedName;		
 	}
 	
 	public Variable(IVariable var) {
 		variable = var;
+		setRank(Integer.MAX_VALUE);
 	}
 	
 	static Variable makeVariable(IVariable var)
