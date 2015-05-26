@@ -27,7 +27,8 @@ abstract public class Variable extends Additional {
 	static Variable makeVariable(IVariable var)
 	{
 		try {
-			return var.getValue().hasVariables() ? new ReferenceVariable(var) : new LiteralVariable(var);
+			return  var.getValue().getReferenceTypeName().startsWith("char[") 
+					? new StringVariable(var) : var.getValue().hasVariables() ? new ReferenceVariable(var) : new LiteralVariable(var);
 		} catch (DebugException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -41,7 +42,7 @@ abstract public class Variable extends Additional {
 	}
 	
 	/**
-	 * Gives cell's content when dragged.
+	 * Gives cell's content even when dragged.
 	 */
 	@Override
 	public String toString()

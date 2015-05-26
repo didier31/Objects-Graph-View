@@ -32,12 +32,14 @@ public class TreeLayout {
 		LinkedHashSet<mxCell> cells = new LinkedHashSet<mxCell>();
 		cells.add(source);
 		this.group = group;
+		alreadyPlaced = new LinkedList<mxCell>();
 		mxPoint M = place(cells, O);
+		alreadyPlaced.clear();
 		Object[] groupChildren = graph.getChildCells(group);
 		mxRectangle childBounds = graph.getBoundingBoxFromGeometry(groupChildren);
 		double dx = - childBounds.getX(),
 			   dy = - childBounds.getY();
-		//graph.updateGroupBounds(new Object[]{parent});
+		graph.updateGroupBounds(new Object[]{group});
 		graph.moveCells(groupChildren, dx, dy);
 		graph.refresh();	
 	}
@@ -57,6 +59,8 @@ public class TreeLayout {
 		}
 	    return maxwidth;
 	}
+	
+	 LinkedList<mxCell> alreadyPlaced;
 	
 	protected mxPoint place(LinkedHashSet<mxCell> cells, mxPoint O)
 	{
@@ -85,11 +89,73 @@ public class TreeLayout {
 				if (insertionY > geometryOfCell.getY())
 				{
 					geometryOfCell.setY(insertionY);	
-				}
-				insertionY = geometryOfCell.getY() + geometryOfCell.getHeight() + YSPACE;
+				}											
+				insertionY = geometryOfCell.getY() + geometryOfCell.getHeight() + YSPACE;						
 			}
+			avoidCollisionWithExisting(alreadyPlaced, cell);
+			alreadyPlaced.add(cell);
 		}
 		return M;
+	}
+	
+	protected void avoidCollisionWithExisting(LinkedList<mxCell> alreadyPlaced, mxCell cell)
+	{
+		mxGeometry cellGeo = cell.getGeometry();
+		LinkedList<mxCell> collisions;
+		do
+		{
+			collisions = collides(alreadyPlaced, cell);
+			if (!collisions.isEmpty())
+			{
+				mxRectangle bounds = graph.getBoundingBoxFromGeometry(collisions.toArray());
+				cellGeo.setY(bounds.getY() + bounds.getHeight() + YSPACE);
+			}
+		} 
+		while (!collisions.isEmpty());
+	}
+	
+	protected boolean collides(mxGeometry g1, mxGeometry g2)
+	{
+		double x = g2.getX(),
+		       y = g2.getY();
+		if (g1.contains(x, y))
+		{
+			return true;
+		}
+		x += g2.getWidth();
+		
+		if (g1.contains(x, y))
+		{
+			return true;
+		}
+		
+		y += g2.getHeight();
+		
+		if (g1.contains(x, y))
+		{
+			return true;
+		}
+		
+		if (g1.contains(g2.getX(), y))
+		{
+			return true;
+		}
+		return false;		
+	} 
+	
+	protected LinkedList<mxCell> collides(LinkedList<mxCell> cells, mxCell cell)
+	{
+		LinkedList<mxCell> collides = new LinkedList<mxCell>();
+		mxGeometry cellGeo = cell.getGeometry();
+		for (mxCell collide : cells)
+		{
+			mxGeometry otherGeo = collide.getGeometry();
+			if (collides(cellGeo, otherGeo))
+			{
+				collides.add(collide);
+			}
+		}
+	return collides;
 	}
 	
 	protected LinkedHashSet<mxCell> getNextVertices(mxCell cell)

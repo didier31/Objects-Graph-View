@@ -97,32 +97,37 @@ public class ObjectGraphViewer extends mxGraph implements MouseListener, KeyList
 
 	@Override
 	public void mouseClicked(MouseEvent e) {
+		/** 
+		 * If double-kick 
+		 */		
 		if (e.getClickCount() == 2)
 		{
 		mxCell cell = (mxCell) getGraphComponent().getCellAt(e.getX(), e.getY());
+		/** 
+		 * If the cell, double-clicked is a reference to a variable 
+		 */
 		if (cell.getValue() instanceof ReferenceVariable)
 		{
 		ReferenceVariable var = (ReferenceVariable) cell.getValue();	
 
-		    // Init in case of the reference is the root of the graph 
+		    /** Init in case of the reference is the root of the graph */ 
     		mxCell group = (mxCell) cell.getParent();
-    		mxCell sourceForLayout;   
-    		// Init of group in case the reference variable is a field of a class    		
+    		/** Init of group in case the reference variable is a field of a class */
     		if (!group.getId().startsWith("grp"))
     		{
-    			sourceForLayout = group;
     			group = (mxCell) group.getParent();
-    		}
-    		else
-    		{
-    			sourceForLayout = cell;
     		}
 	    	try {
 	    		getModel().beginUpdate();
 	    		IValue ivalue = var.getVariable().getValue();
 	    		mxCell referencedCell = CellManager.existingVertex(ivalue, this);
+	    		/**
+	    		 * If the clicked cell has no outgoing connection,
+	    		 * a connection must be created to the referenced variable
+	    		 * create it if needed	    
+	    		 */
 	    		if (getEdges(cell, null, false, true, false).length == 0)
-	    		{	    		 
+	    		{
 	    		if (referencedCell == null)
 	    		{
 	    			referencedCell = CellManager.make(ivalue, cell, group, this);
@@ -130,21 +135,28 @@ public class ObjectGraphViewer extends mxGraph implements MouseListener, KeyList
 	    		else
 	    		{
 	    			CellManager.connectWithExisting(cell, this);
+	    		}	    		
 	    		}
-    		    TreeLayout layout = new TreeLayout(this);
-
-    		    mxCell source = varSources.get(group);
-    		    layout.execute(group, source);
-	    		}
+	    		/**
+	    		 * If the connection already exists then
+	    		 */
 	    		else
 	    		{
-	    			// If the referenced Cell is in the same group as the source
-	    			// then it can be deleted with its subsequents cells.
+	    			/** 
+	    			 * If the referenced Cell is in the same group as the source
+	    			 * then inverse its visibility and the one of its subsequent cells.
+	    			*/
 	    			if (referencedCell.getParent() == group)
 	    			{
-	    				CellManager.removeSubsequentCells(referencedCell, this);
+	    				CellManager.inverseVisibilityOfSubsequentCells(referencedCell, this);
 	    			}
-	    		}
+	    		}	    		
+	    		/**
+	    		 * Once modfications, finished, update the layout of the graph. 
+	    		 */	    		
+    		    TreeLayout layout = new TreeLayout(this);
+    		    mxCell source = varSources.get(group);
+    		    layout.execute(group, source);	    		    
 			} catch (DebugException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();

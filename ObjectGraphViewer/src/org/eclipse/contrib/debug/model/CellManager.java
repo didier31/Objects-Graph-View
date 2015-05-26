@@ -1,16 +1,10 @@
 package org.eclipse.contrib.debug.model;
 
 import java.util.Arrays;
-import java.util.Stack;
-
-import org.eclipse.contrib.debug.model.IterationOnTree.Action;
-import org.eclipse.contrib.debug.model.IterationOnTree.StopCondition;
 import org.eclipse.debug.core.DebugException;
 import org.eclipse.debug.core.model.IValue;
 import org.eclipse.debug.core.model.IVariable;
 import org.eclipse.jdt.debug.core.IJavaVariable;
-import org.eclipse.ui.application.ActionBarAdvisor;
-
 import com.mxgraph.layout.mxStackLayout;
 import com.mxgraph.model.mxCell;
 import com.mxgraph.model.mxGraphModel;
@@ -38,49 +32,6 @@ static public mxCell make(IVariable var, Object parent, ObjectGraphViewer graph)
 	
 	graph.updateCellSize(cell, false);
 	return cell;
-}
-
-static public mxCell existingVertex(Object o, ObjectGraphViewer graph)
-{
-	mxGraphModel model = (mxGraphModel) graph.getModel();
-    return (mxCell) model.getCell(Integer.toString(o.hashCode()));
-}
-
-static public void connectWithExisting(mxCell refVarCell, ObjectGraphViewer graph)
-{
-	mxGraphModel model = (mxGraphModel) graph.getModel();
-	Object cellValue = refVarCell.getValue();
-	if (cellValue instanceof ReferenceVariable)
-	{
-	Variable refVar = (ReferenceVariable) cellValue;
-	IVariable refIvar = refVar.getVariable();
-	IValue referencedValue = null;
-	try {
-		referencedValue = refIvar.getValue();
-	} catch (DebugException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-	}
-	int referencedId = referencedValue.hashCode();
-	mxCell referencedCell = (mxCell) model.getCell(Integer.toString(referencedId));
-	if (referencedCell != null)
-	{
-	String name;
-	try {
-		name = refIvar.getName();
-	} catch (DebugException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-		name = "<No name>";
-	}
-	final String edgeStyle = "edgeStyle=orthogonalEdgeStyle"; 
-	graph.insertEdge(refVarCell, null, name, refVarCell, referencedCell, edgeStyle);
-	Additional rankOfReferencedValue = (Additional) referencedCell.getValue(),
-	     rankOfReference = refVarCell.getParent().getId().startsWith("grp") ? (Additional) refVarCell.getValue() 
-	    		                                                            : (Additional) refVarCell.getParent().getValue();
-	rankOfReferencedValue.setRank(rankOfReference.getRank() + 1);
-	}
-	}
 }
 
 static public mxCell make(IValue value, mxCell previous, Object parent, ObjectGraphViewer graph)
@@ -161,23 +112,73 @@ static public mxCell make(IValue value, mxCell previous, Object parent, ObjectGr
    return cell;
 }
 
-public static void removeSubsequentCells(Object sourceCellToRemove,
+static public mxCell existingVertex(Object o, ObjectGraphViewer graph)
+{
+	mxGraphModel model = (mxGraphModel) graph.getModel();
+    return (mxCell) model.getCell(Integer.toString(o.hashCode()));
+}
+
+static public void connectWithExisting(mxCell refVarCell, ObjectGraphViewer graph)
+{
+	mxGraphModel model = (mxGraphModel) graph.getModel();
+	Object cellValue = refVarCell.getValue();
+	if (cellValue instanceof ReferenceVariable)
+	{
+	Variable refVar = (ReferenceVariable) cellValue;
+	IVariable refIvar = refVar.getVariable();
+	IValue referencedValue = null;
+	try {
+		referencedValue = refIvar.getValue();
+	} catch (DebugException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	}
+	int referencedId = referencedValue.hashCode();
+	mxCell referencedCell = (mxCell) model.getCell(Integer.toString(referencedId));
+	if (referencedCell != null)
+	{
+	String name;
+	try {
+		name = refIvar.getName();
+	} catch (DebugException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+		name = "<No name>";
+	}
+	final String edgeStyle = "edgeStyle=orthogonalEdgeStyle"; 
+	graph.insertEdge(refVarCell, null, name, refVarCell, referencedCell, edgeStyle);
+	Additional rankOfReferencedValue = (Additional) referencedCell.getValue(),
+	     rankOfReference = refVarCell.getParent().getId().startsWith("grp") ? (Additional) refVarCell.getValue() 
+	    		                                                            : (Additional) refVarCell.getParent().getValue();
+	rankOfReferencedValue.setRank(rankOfReference.getRank() + 1);
+	}
+	}
+}
+
+public static void inverseVisibilityOfSubsequentCells(Object sourceCell,
 		                                 ObjectGraphViewer objectGraphViewer) {
 	
-	IterationOnTree.Action removeCell = new IterationOnTree.Action() {
+	boolean newVisibility = !objectGraphViewer.getModel().isVisible(sourceCell);	 
+	
+	IterationOnTree.Action inverseVisibility = new IterationOnTree.Action() {
 
 	    @Override
 	    public void perform(mxCell cell, ObjectGraphViewer objectGraphViewer) 
 	    {
-		objectGraphViewer.removeCells(new Object[]{cell}, true);
+		objectGraphViewer.getModel().setVisible(cell, newVisibility);
+	    Object incomingEdges[] = objectGraphViewer.getIncomingEdges(sourceCell);
+	    for (Object edge : incomingEdges)
+	    {
+	    	objectGraphViewer.getModel().setVisible(edge, newVisibility);	
+	    }
 	    }		
         };
 	
-    IterationOnTree removeSubsequentCells = new IterationOnTree(objectGraphViewer,
-	                                                            null, 
-			                                                    removeCell,
-			                                                    null);
-    removeSubsequentCells.perform(sourceCellToRemove);	
+    IterationOnTree inverseVisibilityOfCells = new IterationOnTree(objectGraphViewer,
+	                                                               null, 
+	                                                               inverseVisibility,
+			                                                       null);
+    inverseVisibilityOfCells.perform(sourceCell);
 }
 
 }

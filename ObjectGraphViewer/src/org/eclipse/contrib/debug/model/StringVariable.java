@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.Serializable;
 
 import org.eclipse.debug.core.DebugException;
+import org.eclipse.debug.core.model.IValue;
 import org.eclipse.debug.core.model.IVariable;
 import org.eclipse.jdt.debug.core.IJavaFieldVariable;
 import org.eclipse.jdt.internal.debug.core.model.JDIFieldVariable;
@@ -11,20 +12,15 @@ import org.eclipse.jdt.internal.debug.core.model.JDIFieldVariable;
 import com.sun.jdi.ObjectReference;
 import com.sun.jdi.StringReference;
 
-public class LiteralVariable extends Variable implements Serializable {
-	
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 3813191475036857622L;
+public class StringVariable extends Variable implements Serializable {
 	private String cachedValue;
 
-	public LiteralVariable(IVariable var) {
+	public StringVariable(IVariable var) {
 		super(var);
 		// TODO Auto-generated constructor stub
 	}
 
-	public LiteralVariable()
+	public StringVariable()
 	{
 		super();
 		cachedValue = "";
@@ -32,15 +28,26 @@ public class LiteralVariable extends Variable implements Serializable {
 	
 	public String toString()
 	{
-		String value = null;
+		String value = null;		
 		try {
-			value = getVariable() != null ? getVariable().getValue().getValueString() : cachedValue;
+			value = getVariable() != null ? stringValue() : cachedValue;
 		} catch (DebugException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 			value = "<No Value>";
 		}
 		return super.toString() +  " := " + value;
+	}
+	
+	protected String stringValue() throws DebugException
+	{
+	IValue value = getVariable().getValue();
+	String stringValue = new String();
+	for (IVariable c : value.getVariables())
+	{
+		stringValue += c.getValue().getValueString();
+	}
+	return '"' + stringValue + '"';
 	}
 	
 	private void writeObject(java.io.ObjectOutputStream out)

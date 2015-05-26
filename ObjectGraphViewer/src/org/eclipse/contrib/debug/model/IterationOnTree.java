@@ -38,7 +38,7 @@ public IterationOnTree(ObjectGraphViewer objectGraphViewer,
 	}
 	else
 	{
-		stopCondition = StopCondition.noConditionalStop;
+		this.stopCondition = StopCondition.noConditionalStop;
 	}
 }
 	
@@ -72,6 +72,10 @@ public boolean perform(Object root) {
 
 mxCell rootCell = (mxCell) root;
 if (stopCondition.stopIf(rootCell))
+	{
+		return true;
+	}
+else
 {
 Additional rootRank = (Additional) rootCell.getValue();
 //Action before
@@ -100,10 +104,6 @@ if (actionAfterSubsequents != null)
 actionAfterSubsequents.perform(rootCell, objectGraphViewer);
 }
 return stopConditionNOK;
-}
-else
-{
-	return true;
 }
 }
 }
